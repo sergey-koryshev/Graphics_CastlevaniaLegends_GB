@@ -1,0 +1,7 @@
+version: 1.0.{build}
+image: Visual Studio 2017
+platform: Any CPU
+clone_folder: C:\projects\
+build:
+  project: Graphics_CastlevaniaLegends_GB.sln
+  verbosity: minimal
