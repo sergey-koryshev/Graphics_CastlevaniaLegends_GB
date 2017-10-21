@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Graphics_CastlevaniaLegends_GB", "src\Graphics_CastlevaniaLegends_GB.csproj", "{99A0C472-5D4E-474B-9ED9-261257C251AA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{99A0C472-5D4E-474B-9ED9-261257C251AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99A0C472-5D4E-474B-9ED9-261257C251AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99A0C472-5D4E-474B-9ED9-261257C251AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99A0C472-5D4E-474B-9ED9-261257C251AA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
