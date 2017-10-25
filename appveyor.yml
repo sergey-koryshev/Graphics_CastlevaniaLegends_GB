@@ -5,3 +5,14 @@ clone_folder: C:\projects\
 build:
   project: Graphics_CastlevaniaLegends_GB.sln
   verbosity: minimal
+test_script:
+- cmd: >-
+    mkdir "tests\result"
+
+    cd "src\bin\Debug"
+
+    CL_graphics.exe -u "..\..\..\tests\01_decompressing\packed_data" "..\..\..\tests\result\unpacked_data" "..\..\..\tests\buffer" 2048 0
+    
+    fc /B "..\..\..\tests\01_decompressing\unpacked_data" "..\..\..\tests\result\unpacked_data"
+    
+    rmdir /S /Q "..\..\..\tests\result"
