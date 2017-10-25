@@ -16,3 +16,6 @@ test_script:
     fc /B "..\..\..\tests\01_decompressing\unpacked_data" "..\..\..\tests\result\unpacked_data"
     
     rmdir /S /Q "..\..\..\tests\result"
+artifacts:
+- path: src\bin\Debug\CL_graphics.exe
+  name: CL Graphics
