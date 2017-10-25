@@ -10,7 +10,7 @@ namespace src
 {
     static class LZSS
     {
-        static private byte SeniorBit(byte value, byte number)
+        static private byte GetBit(byte value, byte number)
         {
             /* The auxiliary method for _unpack method
              * Determines the bit value of the specified byte
@@ -19,8 +19,7 @@ namespace src
              * - number - bit number of the byte
              * Returns:
              * - the bit value */
-            value = (byte)(value >> number);
-            return (byte)(value & 0x01);
+            return (byte)((value >> number) & 0x01);
         }
 
         static private void SwapHalvs(ref byte value)
@@ -29,10 +28,10 @@ namespace src
              * Swaps halves of the specified byte
              * Takes:
              * - value - the targeted byte */
-            byte seniorHalf = (byte)(value & 0xF);
-            byte juniorHalf = (byte)((value >> 4) & 0xF);
+            byte juniorHalf = (byte)(value & 0xF);
+            byte SeniorHalf = (byte)((value >> 4) & 0xF);
 
-            value = (byte)((seniorHalf << 4) | juniorHalf);
+            value = (byte)((juniorHalf << 4) | SeniorHalf);
         }
 
         static private void CopyFromBuffer(ref List<byte> bufferArray, ref List<byte> destinationArray, int offset, byte count, ref int positionBuffer)
@@ -53,7 +52,7 @@ namespace src
             }
         }
 
-        static public List<byte> _unpack(string pathOpen, List<byte> bufferArray, int lengthUnpackedArray, int begin, out int packedCount)
+        static private List<byte> _unpack(string pathOpen, List<byte> bufferArray, int lengthUnpackedArray, int begin, out int packedCount)
         {
             /* Basic method to decompressing data
              * Unpacks data packed by LZSS algorithm
@@ -85,7 +84,7 @@ namespace src
                 packedCount++; // increasing the count of bytes in the sequence of packed data by 1
                 for (byte i = 0; i < 8; i++) // a loop in which we pass through all bits of the flag-byte
                 {
-                    if (SeniorBit(flagByte, i) == 1) // if a bit equals 1 then
+                    if (GetBit(flagByte, i) == 1) // if a specified bit equals 1 then
                     {
                         firstCurrent = openFile.ReadByte(); // reading byte which will be copied in array with unpacked data
                         packedCount++; // increasing the count of bytes in the sequence of packed data by 1
