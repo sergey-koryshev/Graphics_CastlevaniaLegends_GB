@@ -16,17 +16,18 @@ namespace src
             string pathBuffer = args[3]; // путь к файлу буфера
             int lengthOriginal = int.Parse(args[4]); // длина распаковываемой последовательности
             int begin = int.Parse(args[5]); // адрес начала
-            
-            switch(method)
+
+            switch (method)
             {
                 case "-u":
-                    LZSS.Unpack(pathOpen, pathSave, pathBuffer, lengthOriginal, begin);
+                    //LZSS.Unpack(pathOpen, pathSave, pathBuffer, lengthOriginal, begin);
                     break;
                 case "-p":
+                    //LZSS.Pack(pathOpen, pathSave, pathBuffer, begin);
                     break;
                 default:
                     break;
-            }
+            } 
         }
     }
 }
