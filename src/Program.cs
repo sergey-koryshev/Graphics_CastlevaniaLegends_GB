@@ -20,10 +20,10 @@ namespace src
             switch (method)
             {
                 case "-u":
-                    //LZSS.Unpack(pathOpen, pathSave, pathBuffer, lengthOriginal, begin);
+                    LZSS.Unpack(pathOpen, pathSave, pathBuffer, lengthOriginal, begin);
                     break;
                 case "-p":
-                    //LZSS.Pack(pathOpen, pathSave, pathBuffer, begin);
+                    LZSS.Pack(pathOpen, pathSave, pathBuffer, begin);
                     break;
                 default:
                     break;

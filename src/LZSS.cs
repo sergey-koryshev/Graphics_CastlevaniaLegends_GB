@@ -176,7 +176,7 @@ namespace src
             }
         }
 
-        private static bool FindSequenceInBuffer(List<byte> bufferArray, int bufferBegin, int bufferEnd, List<byte> unpackedArray, int positionUnpacked, out int foundSequencePosition, out int foundSequenceCount, out bool RLE)
+        private static bool FindMaxLengthSequence(List<byte> bufferArray, int bufferBegin, int bufferEnd, List<byte> unpackedArray, int positionUnpacked, out int foundSequencePosition, out int foundSequenceCount, out bool RLE)
         {
             bool result = false;
             foundSequencePosition = 0;
@@ -223,10 +223,39 @@ namespace src
             positionSequence = positionUnpacked;
             positionBuffer = (bufferBegin + 0x200) & 0x3FF;
             countSameBytes = 0;
-            
-            // Check for RLE!!! Max length sequence is 0x15. 
-            
+
+            #region Check for RLE
+
+            while (positionSequence < positionUnpacked + 35)
+            {
+                if (bufferArray[bufferEnd] == unpackedArray[positionSequence])
+                {
+                    countSameBytes++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if (countSameBytes > 2 && countSameBytes < 35 && countSameBytes > foundSequenceCount)
+            {
+                result = true;
+                foundSequenceCount = countSameBytes;
+                foundSequencePosition = bufferEnd;
+                RLE = true;
+            }
+
+            #endregion
+
             return result;
+        }
+
+        static private void GetBytes(int position, int count, out byte firstByte, out byte secondByte)
+        {
+            firstByte = 0;
+            secondByte = 0;
+            firstByte = (byte)(position & 0xFF);
+            secondByte = (byte)(((position & 0xFF00) << 5) & count);
         }
 
         private static List<byte> _pack(List<byte> unpackedArray, List<byte> bufferArray)
@@ -240,9 +269,11 @@ namespace src
                 int positionUnpacked = 0;
                 byte flagByte = 0;
                 int positionFlagByte = 0;
-
                 int foundSequencePosition;
                 int foundSequenceCount;
+                bool RLE;
+                byte firstByte = 0;
+                byte secondByte = 0;
                 do
                 {
                     flagByte = 0;
@@ -250,7 +281,23 @@ namespace src
                     positionFlagByte = packedArray.Count - 1;
                     for (int i = 0; i < 8; i++)
                     {
-                        
+                        if (FindMaxLengthSequence(bufferArray, positionBeginBuffer, positionEndBuffer, unpackedArray, positionUnpacked, out foundSequencePosition, out foundSequenceCount, out RLE) == true) {
+                            
+                            if (RLE == true)
+                            {
+                                packedArray[positionFlagByte] = (byte)((0x01 << (7 - i)) & packedArray[positionFlagByte]);
+                                GetBytes(foundSequencePosition, foundSequenceCount, out firstByte, out secondByte);
+                                packedArray.AddRange(new Byte[] { firstByte, secondByte });
+                                while (foundSequenceCount > 0)
+                                {
+                                    bufferArray[positionEndBuffer] = unpackedArray[positionUnpacked];
+                                    positionEndBuffer++;
+                                    positionBeginBuffer++;
+                                    positionUnpacked++;
+                                    foundSequenceCount--;
+                                }
+                            }
+                        }
                     }
                 } while (positionUnpacked < unpackedArray.Count);
             }
