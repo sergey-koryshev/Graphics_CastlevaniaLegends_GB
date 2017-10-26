@@ -22,10 +22,10 @@ namespace src
                     int lengthOriginal = 0;
                     if (args.Length > 4)
                     {
-                        begin = int.Parse(args[5]); // begin address
+                        begin = int.Parse(args[4]); // begin address
                         if (args.Length > 5)
                         {
-                            lengthOriginal = int.Parse(args[4]); // length of required sequence
+                            lengthOriginal = int.Parse(args[5]); // length of required sequence
                         }
                     }
                     switch (method)

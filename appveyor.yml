@@ -1,4 +1,4 @@
-version: 1.0.{build}
+version: 0.0.{build}
 image: Visual Studio 2017
 platform: Any CPU
 clone_folder: C:\projects\
@@ -11,7 +11,7 @@ test_script:
 
     cd "src\bin\Debug"
 
-    CL_graphics.exe -u "..\..\..\tests\01_decompressing\packed_data" "..\..\..\tests\result\unpacked_data" "..\..\..\tests\buffer" 2048 0
+    CL_graphics.exe -u "..\..\..\tests\01_decompressing\packed_data" "..\..\..\tests\result\unpacked_data" "..\..\..\tests\buffer" 0 2048
     
     fc /B "..\..\..\tests\01_decompressing\unpacked_data" "..\..\..\tests\result\unpacked_data"
     
