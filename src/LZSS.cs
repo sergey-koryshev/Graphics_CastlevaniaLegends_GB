@@ -185,6 +185,8 @@ namespace src
             int positionSameBytes = 0;
             int positionBuffer = bufferBegin;
             int positionSequence = positionUnpacked;
+            int lengthRleSequence = 1;
+            bool foundRLE = true;
 
             do
             {
@@ -221,27 +223,43 @@ namespace src
 
             #region Check for RLE
 
-            positionSequence = positionUnpacked;
-            countSameBytes = 0;
-
-            while (positionSequence < positionUnpacked + 35)
+            while (lengthRleSequence < 3)
             {
-                positionBuffer = (bufferEnd - 1 >= 0) ? bufferEnd - 1 : 0x400 + (bufferEnd - 1);
-                if (bufferArray[positionBuffer] == unpackedArray[positionSequence])
+                positionBuffer = (bufferEnd - lengthRleSequence >= 0) ? bufferEnd - lengthRleSequence : 0x400 + (bufferEnd - lengthRleSequence);
+                positionSequence = positionUnpacked;
+                countSameBytes = 0;
+                foundRLE = true;
+                while (positionSequence < positionUnpacked + 35 && positionUnpacked < unpackedArray.Count)
                 {
-                    countSameBytes++;
-                    positionSequence++;
+                    for (int i = 0; i < lengthRleSequence; i++)
+                    {
+                        if (bufferArray[positionBuffer + i] != unpackedArray[positionUnpacked + i] || positionUnpacked + i >= unpackedArray.Count)
+                        {
+                            foundRLE = false;
+                            break;
+                        }
+                    }
+                    if (foundRLE != false)
+                    {
+                        if (countSameBytes == 0)
+                        {
+                            positionSameBytes = positionBuffer;
+                        }
+                        countSameBytes++;
+                        positionUnpacked += countSameBytes * lengthRleSequence;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-                else
-                {
-                    break;
-                }
+                lengthRleSequence++;
             }
             if (countSameBytes > 2 && countSameBytes < 35 && countSameBytes >= foundSequenceCount)
             {
                 result = true;
-                foundSequenceCount = countSameBytes;
-                foundSequencePosition = bufferEnd - 1;
+                foundSequenceCount = countSameBytes * (bufferEnd - positionSameBytes);
+                foundSequencePosition = positionSameBytes;
             }
 
             #endregion
