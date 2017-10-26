@@ -59,7 +59,7 @@ namespace src
             }
         }
 
-        static private List<byte> _unpack(string pathOpen, List<byte> bufferArray, int lengthUnpackedArray, int begin, out int packedCount)
+        static private List<byte> _unpack(string pathOpen, List<byte> bufferArray, int begin, int lengthUnpackedArray, out int packedCount)
         {
             /* Basic method to decompressing data
              * Unpacks data packed by LZSS algorithm
@@ -127,7 +127,7 @@ namespace src
             return unpackedArray;
         }
 
-        public static void Unpack(string pathOpen, string pathSave, string pathBuffer, int lengthUnpackedArray, int begin)
+        public static void Unpack(string pathOpen, string pathSave, string pathBuffer, int begin, int lengthUnpackedArray)
         {
             /* Public method to decompressing the packed data
              * Takes:
@@ -153,7 +153,7 @@ namespace src
                 #region Decompressing data
 
                 int packedCount;
-                List<byte> unpackedArray = _unpack(pathOpen, bufferArray, lengthUnpackedArray, begin, out packedCount);
+                List<byte> unpackedArray = _unpack(pathOpen, bufferArray, begin, lengthUnpackedArray, out packedCount);
 
                 #endregion
 
@@ -176,73 +176,72 @@ namespace src
             }
         }
 
-        private static bool FindMaxLengthSequence(List<byte> bufferArray, int bufferBegin, int bufferEnd, List<byte> unpackedArray, int positionUnpacked, out int foundSequencePosition, out int foundSequenceCount, out bool RLE)
+        private static bool FindMaxLengthSequence(List<byte> bufferArray, int bufferBegin, int bufferEnd, List<byte> unpackedArray, int positionUnpacked, out int foundSequencePosition, out int foundSequenceCount)
         {
             bool result = false;
             foundSequencePosition = 0;
             foundSequenceCount = 0;
-            RLE = false;
             int countSameBytes = 0;
             int positionSameBytes = 0;
-            int countOfBytesInBuffer = 0;
-            int positionBuffer = bufferBegin + countOfBytesInBuffer;
+            int positionBuffer = bufferBegin;
             int positionSequence = positionUnpacked;
 
             do
             {
                 if (bufferArray[positionBuffer] == unpackedArray[positionSequence] && countSameBytes < 35)
                 {
-                    countSameBytes++;
                     if (countSameBytes == 0)
                     {
                         positionSameBytes = positionBuffer;
                     }
-                    countOfBytesInBuffer++;
+                    countSameBytes++;
                     positionSequence++;
+                    positionBuffer = ++positionBuffer & 0x3FF;
                 }
                 else
                 {
-                    if (countSameBytes > 2 && countSameBytes >= foundSequenceCount)
+                    if (countSameBytes > 2 && countSameBytes < 35 && countSameBytes >= foundSequenceCount)
                     {
                         result = true;
                         foundSequenceCount = countSameBytes;
                         foundSequencePosition = positionSameBytes;
                     }
-                    countOfBytesInBuffer = ++countOfBytesInBuffer - countSameBytes;
+                    positionBuffer = (positionBuffer - countSameBytes >= 0) ? positionBuffer - countSameBytes : 0x400 + (bufferEnd - 1);
+                    positionBuffer = ++positionBuffer & 0x3FF;
                     positionSequence = positionUnpacked;
                     countSameBytes = 0;
                 }
-                positionBuffer = (bufferBegin + countOfBytesInBuffer) & 0x3FF;
-            } while ((positionSequence < unpackedArray.Count) || countOfBytesInBuffer <= bufferArray.Count);
-            if (countSameBytes > 2 && countSameBytes >= foundSequenceCount)
+            } while (positionSequence < unpackedArray.Count && positionBuffer != bufferEnd);
+            if (countSameBytes > 2 && countSameBytes < 35 && countSameBytes >= foundSequenceCount)
             {
                 result = true;
                 foundSequenceCount = countSameBytes;
                 foundSequencePosition = positionSameBytes;
             }
-            positionSequence = positionUnpacked;
-            positionBuffer = (bufferBegin + 0x200) & 0x3FF;
-            countSameBytes = 0;
 
             #region Check for RLE
 
+            positionSequence = positionUnpacked;
+            countSameBytes = 0;
+
             while (positionSequence < positionUnpacked + 35)
             {
-                if (bufferArray[bufferEnd] == unpackedArray[positionSequence])
+                positionBuffer = (bufferEnd - 1 >= 0) ? bufferEnd - 1 : 0x400 + (bufferEnd - 1);
+                if (bufferArray[positionBuffer] == unpackedArray[positionSequence])
                 {
                     countSameBytes++;
+                    positionSequence++;
                 }
                 else
                 {
                     break;
                 }
             }
-            if (countSameBytes > 2 && countSameBytes < 35 && countSameBytes > foundSequenceCount)
+            if (countSameBytes > 2 && countSameBytes < 35 && countSameBytes >= foundSequenceCount)
             {
                 result = true;
                 foundSequenceCount = countSameBytes;
-                foundSequencePosition = bufferEnd;
-                RLE = true;
+                foundSequencePosition = bufferEnd - 1;
             }
 
             #endregion
@@ -255,7 +254,7 @@ namespace src
             firstByte = 0;
             secondByte = 0;
             firstByte = (byte)(position & 0xFF);
-            secondByte = (byte)(((position & 0xFF00) << 5) & count);
+            secondByte = (byte)(((position >> 8) << 5) | count - 3);
         }
 
         private static List<byte> _pack(List<byte> unpackedArray, List<byte> bufferArray)
@@ -271,7 +270,6 @@ namespace src
                 int positionFlagByte = 0;
                 int foundSequencePosition;
                 int foundSequenceCount;
-                bool RLE;
                 byte firstByte = 0;
                 byte secondByte = 0;
                 do
@@ -281,22 +279,52 @@ namespace src
                     positionFlagByte = packedArray.Count - 1;
                     for (int i = 0; i < 8; i++)
                     {
-                        if (FindMaxLengthSequence(bufferArray, positionBeginBuffer, positionEndBuffer, unpackedArray, positionUnpacked, out foundSequencePosition, out foundSequenceCount, out RLE) == true) {
-                            
-                            if (RLE == true)
+                        if (FindMaxLengthSequence(bufferArray, positionBeginBuffer, positionEndBuffer, unpackedArray, positionUnpacked, out foundSequencePosition, out foundSequenceCount) == true)
+                        {
+                            packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x00 << i));
+                            GetBytes(foundSequencePosition, foundSequenceCount, out firstByte, out secondByte);
+                            packedArray.AddRange(new Byte[] { firstByte, secondByte });
+                            while (foundSequenceCount > 0)
                             {
-                                packedArray[positionFlagByte] = (byte)((0x01 << (7 - i)) & packedArray[positionFlagByte]);
-                                GetBytes(foundSequencePosition, foundSequenceCount, out firstByte, out secondByte);
-                                packedArray.AddRange(new Byte[] { firstByte, secondByte });
-                                while (foundSequenceCount > 0)
+                                bufferArray[positionEndBuffer] = unpackedArray[positionUnpacked];
+                                if (positionEndBuffer - positionBeginBuffer >= 0)
                                 {
-                                    bufferArray[positionEndBuffer] = unpackedArray[positionUnpacked];
-                                    positionEndBuffer++;
-                                    positionBeginBuffer++;
-                                    positionUnpacked++;
-                                    foundSequenceCount--;
+                                    positionBeginBuffer = ((positionEndBuffer + 1) - positionBeginBuffer <= 0x3FF) ? positionBeginBuffer : positionBeginBuffer++;
+                                    positionEndBuffer = ++positionEndBuffer & 0x3FF;
                                 }
+                                else
+                                {
+                                    positionBeginBuffer = ++positionBeginBuffer & 0x3FF;
+                                    positionEndBuffer = ++positionEndBuffer & 0x3FF;
+                                }
+                                positionUnpacked++;
+                                foundSequenceCount--;
                             }
+                        }
+                        else
+                        {
+                            packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x01 << i));
+                            packedArray.Add(unpackedArray[positionUnpacked]);
+                            bufferArray[positionEndBuffer] = unpackedArray[positionUnpacked];
+                            if (positionEndBuffer - positionBeginBuffer >= 0)
+                            {
+                                positionBeginBuffer = ((positionEndBuffer + 1) - positionBeginBuffer <= 0x3FF) ? positionBeginBuffer : ++positionBeginBuffer;
+                                positionEndBuffer = ++positionEndBuffer & 0x3FF;
+                            }
+                            else
+                            {
+                                positionBeginBuffer = ++positionBeginBuffer & 0x3FF;
+                                positionEndBuffer = ++positionEndBuffer & 0x3FF;
+                            }
+                            positionUnpacked++;
+                        }
+                        if (positionUnpacked >= unpackedArray.Count)
+                        {
+                            for (int j = i; j < 8; j++)
+                            {
+                                packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x01 << i));
+                            }
+                            break;
                         }
                     }
                 } while (positionUnpacked < unpackedArray.Count);
