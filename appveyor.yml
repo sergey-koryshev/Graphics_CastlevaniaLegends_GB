@@ -15,7 +15,7 @@ test_script:
     
     fc /B "..\..\..\tests\01_decompressing\unpacked_data" "..\..\..\tests\results\01\unpacked_data"
 
-    mkdir "tests\result\02\
+    mkdir "tests\results\02\
     
     CL_graphics.exe -p "..\..\..\tests\02_compressing\unpacked_data" "..\..\..\tests\results\02\packed_data" "..\..\..\tests\buffer"
 
