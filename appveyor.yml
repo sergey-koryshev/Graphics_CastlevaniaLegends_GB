@@ -15,6 +15,10 @@ test_script:
     
     fc /B "..\..\..\tests\01_decompressing\unpacked_data" "..\..\..\tests\result\unpacked_data"
     
+    CL_graphics.exe -u "..\..\..\tests\02_compressing\unpacked_data" "..\..\..\tests\result\packed_data" "..\..\..\tests\buffer"
+
+    fc /B "..\..\..\02_compressing\packed_data" "..\..\..\tests\result\packed_data"
+
     rmdir /S /Q "..\..\..\tests\result"
 artifacts:
 - path: src\bin\Debug\CL_graphics.exe

@@ -187,11 +187,13 @@ namespace src
             int positionSequence = positionUnpacked;
             int lengthRleSequence = 1;
             int minCountSameBytes = 2;
+            int maxLengthSequence = 0x1F + 3;
+            int maxLengthRleSequence = (int)(maxLengthSequence / 3);
             bool foundRLE;
 
             do
             {
-                if (bufferArray[positionBuffer] == unpackedArray[positionSequence] && countSameBytes < 35)
+                if (bufferArray[positionBuffer] == unpackedArray[positionSequence] && countSameBytes <= maxLengthSequence)
                 {
                     if (countSameBytes == 0)
                     {
@@ -203,7 +205,7 @@ namespace src
                 }
                 else
                 {
-                    if (countSameBytes > minCountSameBytes && countSameBytes < 35 && countSameBytes > foundSequenceCount)
+                    if (countSameBytes > minCountSameBytes && countSameBytes <= maxLengthSequence && countSameBytes > foundSequenceCount)
                     {
                         result = true;
                         foundSequenceCount = countSameBytes;
@@ -215,7 +217,7 @@ namespace src
                     countSameBytes = 0;
                 }
             } while (positionSequence < unpackedArray.Count && positionBuffer != bufferEnd);
-            if (countSameBytes > minCountSameBytes && countSameBytes < 35 && countSameBytes > foundSequenceCount)
+            if (countSameBytes > minCountSameBytes && countSameBytes <= maxLengthSequence && countSameBytes > foundSequenceCount)
             {
                 result = true;
                 foundSequenceCount = countSameBytes;
@@ -224,46 +226,45 @@ namespace src
 
             #region Check for RLE
 
-            while (lengthRleSequence < 3)
+            while (lengthRleSequence <= maxLengthRleSequence)
             {
                 positionBuffer = (bufferEnd - lengthRleSequence >= 0) ? bufferEnd - lengthRleSequence : 0x400 + (bufferEnd - lengthRleSequence);
                 positionSequence = positionUnpacked;
                 countSameBytes = 0;
                 foundRLE = true;
-                while (positionSequence < positionUnpacked + 35 && positionUnpacked < unpackedArray.Count)
+                while (positionSequence < unpackedArray.Count)
                 {
-                    for (int i = 0; i < lengthRleSequence; i++)
+                    int i = 0;
+                    while (i < lengthRleSequence && positionSequence + i < unpackedArray.Count && countSameBytes <= maxLengthSequence)
                     {
-                        if (bufferArray[positionBuffer + i] != unpackedArray[positionUnpacked + i] || positionUnpacked + i >= unpackedArray.Count)
+                        if (bufferArray[(positionBuffer + i) & 0x3FF] == unpackedArray[positionSequence + i])
+                        {
+                            countSameBytes++;
+                        }
+                        else
                         {
                             foundRLE = false;
                             break;
                         }
+                        i++;
                     }
-                    if (foundRLE != false)
+                    if (countSameBytes != 0)
                     {
-                        if (countSameBytes == 0)
-                        {
-                            positionSameBytes = positionBuffer;
-                        }
-                        countSameBytes++;
-                        positionUnpacked += lengthRleSequence;
+                        positionSequence += lengthRleSequence;
                     }
-                    else
+                    if (!foundRLE)
                     {
                         break;
                     }
                 }
-                if (countSameBytes * lengthRleSequence > minCountSameBytes && countSameBytes * lengthRleSequence > foundSequenceCount)
+                if (countSameBytes > minCountSameBytes && countSameBytes > foundSequenceCount)
                 {
                     result = true;
-                    foundSequenceCount = countSameBytes * lengthRleSequence;
-                    foundSequencePosition = positionSameBytes;
+                    foundSequenceCount = countSameBytes;
+                    foundSequencePosition = positionBuffer;
                 }
                 lengthRleSequence++;
             }
-
-
 
             #endregion
 
@@ -296,10 +297,15 @@ namespace src
                 do
                 {
                     flagByte = 0;
+                    positionFlagByte = packedArray.Count;
                     packedArray.Add(flagByte);
-                    positionFlagByte = packedArray.Count - 1;
+
                     for (int i = 0; i < 8; i++)
                     {
+                        if (packedArray.Count - 1 == 0x217)
+                        {
+                            int c = 1;
+                        }
                         if (FindMaxLengthSequence(bufferArray, positionBeginBuffer, positionEndBuffer, unpackedArray, positionUnpacked, out foundSequencePosition, out foundSequenceCount) == true)
                         {
                             packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x00 << i));
@@ -308,9 +314,9 @@ namespace src
                             while (foundSequenceCount > 0)
                             {
                                 bufferArray[positionEndBuffer] = unpackedArray[positionUnpacked];
-                                if (positionEndBuffer - positionBeginBuffer >= 0)
+                                if (positionEndBuffer - positionBeginBuffer > 0)
                                 {
-                                    positionBeginBuffer = ((positionEndBuffer + 1) - positionBeginBuffer <= 0x3FF) ? positionBeginBuffer : ++positionBeginBuffer;
+                                    positionBeginBuffer = ((positionEndBuffer + 1) - positionBeginBuffer < 0x400) ? positionBeginBuffer : ++positionBeginBuffer;
                                     positionEndBuffer = ++positionEndBuffer & 0x3FF;
                                 }
                                 else
@@ -327,9 +333,9 @@ namespace src
                             packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x01 << i));
                             packedArray.Add(unpackedArray[positionUnpacked]);
                             bufferArray[positionEndBuffer] = unpackedArray[positionUnpacked];
-                            if (positionEndBuffer - positionBeginBuffer >= 0)
+                            if (positionEndBuffer - positionBeginBuffer > 0)
                             {
-                                positionBeginBuffer = ((positionEndBuffer + 1) - positionBeginBuffer <= 0x3FF) ? positionBeginBuffer : ++positionBeginBuffer;
+                                positionBeginBuffer = ((positionEndBuffer + 1) - positionBeginBuffer < 0x400) ? positionBeginBuffer : ++positionBeginBuffer;
                                 positionEndBuffer = ++positionEndBuffer & 0x3FF;
                             }
                             else
@@ -352,7 +358,7 @@ namespace src
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.ToString());
             }
 
             return packedArray;
@@ -408,7 +414,7 @@ namespace src
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.ToString());
             }
         }
     }
