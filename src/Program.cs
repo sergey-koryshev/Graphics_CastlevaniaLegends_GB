@@ -39,7 +39,6 @@ namespace src
                         default:
                             break;
                     }
-                    Console.ReadLine();
                 }
             }
         }
