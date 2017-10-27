@@ -186,7 +186,8 @@ namespace src
             int positionBuffer = bufferBegin;
             int positionSequence = positionUnpacked;
             int lengthRleSequence = 1;
-            bool foundRLE = true;
+            int minCountSameBytes = 2;
+            bool foundRLE;
 
             do
             {
@@ -202,19 +203,19 @@ namespace src
                 }
                 else
                 {
-                    if (countSameBytes > 2 && countSameBytes < 35 && countSameBytes >= foundSequenceCount)
+                    if (countSameBytes > minCountSameBytes && countSameBytes < 35 && countSameBytes > foundSequenceCount)
                     {
                         result = true;
                         foundSequenceCount = countSameBytes;
                         foundSequencePosition = positionSameBytes;
                     }
-                    positionBuffer = (positionBuffer - countSameBytes >= 0) ? positionBuffer - countSameBytes : 0x400 + (bufferEnd - 1);
+                    positionBuffer = (positionBuffer - countSameBytes >= 0) ? positionBuffer - countSameBytes : 0x400 + (positionBuffer - countSameBytes);
                     positionBuffer = ++positionBuffer & 0x3FF;
                     positionSequence = positionUnpacked;
                     countSameBytes = 0;
                 }
             } while (positionSequence < unpackedArray.Count && positionBuffer != bufferEnd);
-            if (countSameBytes > 2 && countSameBytes < 35 && countSameBytes >= foundSequenceCount)
+            if (countSameBytes > minCountSameBytes && countSameBytes < 35 && countSameBytes > foundSequenceCount)
             {
                 result = true;
                 foundSequenceCount = countSameBytes;
@@ -246,21 +247,23 @@ namespace src
                             positionSameBytes = positionBuffer;
                         }
                         countSameBytes++;
-                        positionUnpacked += countSameBytes * lengthRleSequence;
+                        positionUnpacked += lengthRleSequence;
                     }
                     else
                     {
                         break;
                     }
                 }
+                if (countSameBytes * lengthRleSequence > minCountSameBytes && countSameBytes * lengthRleSequence > foundSequenceCount)
+                {
+                    result = true;
+                    foundSequenceCount = countSameBytes * lengthRleSequence;
+                    foundSequencePosition = positionSameBytes;
+                }
                 lengthRleSequence++;
             }
-            if (countSameBytes > 2 && countSameBytes < 35 && countSameBytes >= foundSequenceCount)
-            {
-                result = true;
-                foundSequenceCount = countSameBytes * (bufferEnd - positionSameBytes);
-                foundSequencePosition = positionSameBytes;
-            }
+
+
 
             #endregion
 
@@ -301,13 +304,13 @@ namespace src
                         {
                             packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x00 << i));
                             GetBytes(foundSequencePosition, foundSequenceCount, out firstByte, out secondByte);
-                            packedArray.AddRange(new Byte[] { firstByte, secondByte });
+                            packedArray.AddRange(new byte[] { firstByte, secondByte });
                             while (foundSequenceCount > 0)
                             {
                                 bufferArray[positionEndBuffer] = unpackedArray[positionUnpacked];
                                 if (positionEndBuffer - positionBeginBuffer >= 0)
                                 {
-                                    positionBeginBuffer = ((positionEndBuffer + 1) - positionBeginBuffer <= 0x3FF) ? positionBeginBuffer : positionBeginBuffer++;
+                                    positionBeginBuffer = ((positionEndBuffer + 1) - positionBeginBuffer <= 0x3FF) ? positionBeginBuffer : ++positionBeginBuffer;
                                     positionEndBuffer = ++positionEndBuffer & 0x3FF;
                                 }
                                 else
