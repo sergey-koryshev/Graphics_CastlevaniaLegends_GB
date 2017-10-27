@@ -17,7 +17,7 @@ test_script:
     
     CL_graphics.exe -p "..\..\..\tests\02_compressing\unpacked_data" "..\..\..\tests\result\packed_data" "..\..\..\tests\buffer"
 
-    fc /B "..\..\..\02_compressing\packed_data" "..\..\..\tests\result\packed_data"
+    fc /B "..\..\..\tests\02_compressing\packed_data" "..\..\..\tests\result\packed_data"
 
     rmdir /S /Q "..\..\..\tests\result"
 artifacts:
