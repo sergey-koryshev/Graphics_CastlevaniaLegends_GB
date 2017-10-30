@@ -178,55 +178,69 @@ namespace src
 
         private static bool FindMaxLengthSequence(List<byte> bufferArray, int bufferBegin, int bufferEnd, List<byte> unpackedArray, int positionUnpacked, out int foundSequencePosition, out int foundSequenceCount)
         {
-            bool result = false;
-            foundSequencePosition = 0;
-            foundSequenceCount = 0;
-            int countSameBytes = 0;
-            int positionSameBytes = 0;
-            int positionBuffer = bufferBegin;
-            int positionSequence = positionUnpacked;
-            int lengthRleSequence = 1;
-            int minCountSameBytes = 2;
-            int maxLengthSequence = 0x1F + 3;
-            int maxLengthRleSequence = (int)(maxLengthSequence / 3);
-            bool foundRLE;
+            /* The auxiliary method for _pack method
+             * It finds a sequence of maximum length in the buffer array
+             * Takes:
+             * - bufferArray - the buffer array in that we will look for the sequence
+             * - bufferBegin - position of begin's buffer array
+             * - bufferEnd - position of end's buffer array
+             * - unpackedArray - the array of decompressed data from that we will take the sequence for search
+             * - positionUnpacked - position in the array of decompressed data
+             * Returns:
+             * - true - if the required sequence was found, false - if it was not found
+             * - foundSequencePosition - position of the found sequence in the buffer array
+             * - foundSequenceCount - number of the found sequence's bytes
+             * Date of creasting:
+             * - October 2017 */
+            bool result = false; // result of the method, initial value is false
+            foundSequencePosition = 0; // position of the found sequence in the buffer array
+            foundSequenceCount = 0; // number of the found sequence's bytes
+            int countSameBytes = 0; // number of unpacked array's bytes are coincided with buffer array's bytes
+            int positionSameBytes = 0; // position of the begin of the matching bytes;
+            int positionBuffer = bufferBegin; // current position in the buffer array
+            int positionSequence = positionUnpacked; // current position in the unpacked array
+            int lengthRleSequence = 1; // current length of sequence, when we check fro RLE
+            int minCountSameBytes = 2; // the minimum length of sequence that we will compress
+            int maxLengthSequence = 0x1F + 3; // the maximum length of sequence that we can compress
+            int maxLengthRleSequence = (int)(maxLengthSequence / 3); // the maximum length of sequence that we can compress during check for RLE
+            bool foundRLE; // true - we found RLE, false - we didn't find RLE
 
-            do
+            do 
             {
-                if (bufferArray[positionBuffer] == unpackedArray[positionSequence] && countSameBytes <= maxLengthSequence)
+                if (bufferArray[positionBuffer] == unpackedArray[positionSequence] && countSameBytes <= maxLengthSequence) // if current byte of buffer array and current byte of unpacked array are equal, then
                 {
-                    if (countSameBytes == 0)
+                    if (countSameBytes == 0) // if this is first matching
                     {
-                        positionSameBytes = positionBuffer;
+                        positionSameBytes = positionBuffer; // write its position
                     }
-                    countSameBytes++;
-                    positionSequence++;
-                    positionBuffer = ++positionBuffer & 0x3FF;
+                    countSameBytes++; // increase counter the same bytes
+                    positionSequence++; // increase position in the unpacked array
+                    positionBuffer = ++positionBuffer & 0x3FF; // increase position in the buffer array
                 }
-                else
+                else // if current byte of buffer array and current byte of unpacked array are not equal, then
                 {
-                    if (countSameBytes > minCountSameBytes && countSameBytes <= maxLengthSequence && countSameBytes > foundSequenceCount)
+                    if (countSameBytes > minCountSameBytes && countSameBytes <= maxLengthSequence && countSameBytes > foundSequenceCount) // if the number the same bytes more the minimum length of sequence, less or equal to the maximum length of sequence and more the number of bytes of found sequence (if it is), then
                     {
-                        result = true;
-                        foundSequenceCount = countSameBytes;
-                        foundSequencePosition = positionSameBytes;
+                        result = true; // set result as true
+                        foundSequenceCount = countSameBytes; // write found number the same bytes
+                        foundSequencePosition = positionSameBytes; // write found position the sequence
                     }
-                    positionBuffer = (positionBuffer - countSameBytes >= 0) ? positionBuffer - countSameBytes : 0x400 + (positionBuffer - countSameBytes);
-                    positionBuffer = ++positionBuffer & 0x3FF;
-                    positionSequence = positionUnpacked;
-                    countSameBytes = 0;
+                    positionBuffer = (positionBuffer - countSameBytes >= 0) ? positionBuffer - countSameBytes : 0x400 + (positionBuffer - countSameBytes); // return to position of buffer array minus found number the same bytes
+                    positionBuffer = ++positionBuffer & 0x3FF; // increase position in the buffer array
+                    positionSequence = positionUnpacked; // return to begin of the unpacked array
+                    countSameBytes = 0; // zeroing of number the same bytes
                 }
-            } while (positionSequence < unpackedArray.Count && positionBuffer != bufferEnd);
-            if (countSameBytes > minCountSameBytes && countSameBytes <= maxLengthSequence && countSameBytes > foundSequenceCount)
+            } while (positionSequence < unpackedArray.Count && positionBuffer != bufferEnd); // the cycle runs while position in the unpacked array less the length of the unpacked array and position in the buffer array doesn't equal to the end position of it
+            if (countSameBytes > minCountSameBytes && countSameBytes <= maxLengthSequence && countSameBytes > foundSequenceCount) // check the found sequence (if it is) again, it is necessary if we leave the loop from true condition
             {
-                result = true;
-                foundSequenceCount = countSameBytes;
-                foundSequencePosition = positionSameBytes;
+                result = true; // set result as true
+                foundSequenceCount = countSameBytes; // write found number of the same bytes
+                foundSequencePosition = positionSameBytes; // write found position the sequence
             }
 
-            #region Check for RLE
+            #region Check for RLE // here is checking for RLE
 
-            while (lengthRleSequence <= maxLengthRleSequence)
+            while (lengthRleSequence <= maxLengthRleSequence) // while current length sequence that we search less or equal to the maximum length of sequence that we can compress by RLE
             {
                 positionBuffer = (bufferEnd - lengthRleSequence >= 0) ? bufferEnd - lengthRleSequence : 0x400 + (bufferEnd - lengthRleSequence);
                 positionSequence = positionUnpacked;
@@ -279,6 +293,20 @@ namespace src
             secondByte = (byte)(((position >> 8) << 5) | count - 3);
         }
 
+        static private void IncreaseBufferPosition(ref int begin, ref int end)
+        {
+            if (end - begin > 0)
+            {
+                begin = ((end + 1) - begin < 0x400) ? begin : ++begin;
+                end = ++end & 0x3FF;
+            }
+            else
+            {
+                begin = ++begin & 0x3FF;
+                end = ++end & 0x3FF;
+            }
+        }
+
         private static List<byte> _pack(List<byte> unpackedArray, List<byte> bufferArray)
         {
             List<byte> packedArray = new List<byte>();
@@ -310,16 +338,7 @@ namespace src
                             while (foundSequenceCount > 0)
                             {
                                 bufferArray[positionEndBuffer] = unpackedArray[positionUnpacked];
-                                if (positionEndBuffer - positionBeginBuffer > 0)
-                                {
-                                    positionBeginBuffer = ((positionEndBuffer + 1) - positionBeginBuffer < 0x400) ? positionBeginBuffer : ++positionBeginBuffer;
-                                    positionEndBuffer = ++positionEndBuffer & 0x3FF;
-                                }
-                                else
-                                {
-                                    positionBeginBuffer = ++positionBeginBuffer & 0x3FF;
-                                    positionEndBuffer = ++positionEndBuffer & 0x3FF;
-                                }
+                                IncreaseBufferPosition(ref positionBeginBuffer, ref positionEndBuffer);
                                 positionUnpacked++;
                                 foundSequenceCount--;
                             }
@@ -329,16 +348,7 @@ namespace src
                             packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x01 << i));
                             packedArray.Add(unpackedArray[positionUnpacked]);
                             bufferArray[positionEndBuffer] = unpackedArray[positionUnpacked];
-                            if (positionEndBuffer - positionBeginBuffer > 0)
-                            {
-                                positionBeginBuffer = ((positionEndBuffer + 1) - positionBeginBuffer < 0x400) ? positionBeginBuffer : ++positionBeginBuffer;
-                                positionEndBuffer = ++positionEndBuffer & 0x3FF;
-                            }
-                            else
-                            {
-                                positionBeginBuffer = ++positionBeginBuffer & 0x3FF;
-                                positionEndBuffer = ++positionEndBuffer & 0x3FF;
-                            }
+                            IncreaseBufferPosition(ref positionBeginBuffer, ref positionEndBuffer);
                             positionUnpacked++;
                         }
                         if (positionUnpacked >= unpackedArray.Count)

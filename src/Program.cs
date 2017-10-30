@@ -40,6 +40,7 @@ namespace src
                             break;
                     }
                 }
+                Console.ReadLine();
             }
         }
     }
