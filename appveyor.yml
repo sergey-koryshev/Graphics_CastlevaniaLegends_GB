@@ -20,7 +20,7 @@ test_script:
 
     CL_graphics.exe -u "..\..\..\tests\results\02\packed_data" "..\..\..\tests\results\02\unpacked_data" "..\..\..\tests\buffer" 0 2048
 
-    fc /B "..\..\..\tests\results\01\unpacked_data" "..\..\..\tests\results\02\unpacked_data"
+    fc /B "..\..\..\tests\02_compressing\unpacked_data" "..\..\..\tests\results\02\unpacked_data"
 
     rmdir /S /Q "..\..\..\tests\results"
 artifacts:
