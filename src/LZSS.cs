@@ -123,7 +123,7 @@ namespace src
             {
                 Console.WriteLine(ex.Message);
             }
-
+        
             return unpackedArray;
         }
 
@@ -168,7 +168,7 @@ namespace src
 
                 #endregion
 
-                Console.WriteLine("Uncompressing was successed. Compressed data takes {0} bytes, decompressed data takes {1} bytes.", packedCount, unpackedArray.Count);
+                Console.WriteLine("Uncompressing was successful. Compressed data takes {0} bytes, decompressed data takes {1} bytes.", packedCount, unpackedArray.Count);
             }
             catch (Exception ex)
             {
@@ -249,7 +249,7 @@ namespace src
                 while (positionSequence < unpackedArray.Count)
                 {
                     int i = 0;
-                    while (i < lengthRleSequence && positionSequence + i < unpackedArray.Count && countSameBytes <= maxLengthSequence)
+                    while (i < lengthRleSequence && positionSequence + i < unpackedArray.Count && countSameBytes < maxLengthSequence)
                     {
                         if (bufferArray[(positionBuffer + i) & 0x3FF] == unpackedArray[positionSequence + i])
                         {
@@ -328,8 +328,14 @@ namespace src
                     positionFlagByte = packedArray.Count;
                     packedArray.Add(flagByte);
 
+
+
                     for (int i = 0; i < 8; i++)
                     {
+                        if (positionUnpacked > 0x750)
+                        {
+                            int h = 0;
+                        }
                         if (FindMaxLengthSequence(bufferArray, positionBeginBuffer, positionEndBuffer, unpackedArray, positionUnpacked, out foundSequencePosition, out foundSequenceCount) == true)
                         {
                             packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x00 << i));
@@ -416,7 +422,7 @@ namespace src
 
                 #endregion
 
-                Console.WriteLine("Compressing was successed. Decompressed data takes {0} bytes, compressed data takes {1} bytes.", unpackedArray.Count, packedArray.Count);
+                Console.WriteLine("Compressing was successful. Decompressed data takes {0} bytes, compressed data takes {1} bytes.", unpackedArray.Count, packedArray.Count);
             }
             catch (Exception ex)
             {
