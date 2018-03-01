@@ -18,7 +18,7 @@ test_script:
     
     CL_graphics.exe -p "..\..\..\tests\02_compressing\unpacked_data" "..\..\..\tests\results\02\packed_data" "..\..\..\tests\buffer"
 
-    CL_graphics.exe -u "..\..\..\tests\results\02\packed_data" "..\..\..\tests\results\02\unpacked_data" "..\..\..\tests\buffer" 0 2048
+    CL_graphics.exe -u "..\..\..\tests\results\02\packed_data" "..\..\..\tests\results\02\unpacked_data" "..\..\..\tests\buffer" 0 1952
 
     fc /B "..\..\..\tests\02_compressing\unpacked_data" "..\..\..\tests\results\02\unpacked_data"
 

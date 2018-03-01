@@ -328,14 +328,8 @@ namespace src
                     positionFlagByte = packedArray.Count;
                     packedArray.Add(flagByte);
 
-
-
                     for (int i = 0; i < 8; i++)
                     {
-                        if (positionUnpacked > 0x750)
-                        {
-                            int h = 0;
-                        }
                         if (FindMaxLengthSequence(bufferArray, positionBeginBuffer, positionEndBuffer, unpackedArray, positionUnpacked, out foundSequencePosition, out foundSequenceCount) == true)
                         {
                             packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x00 << i));
