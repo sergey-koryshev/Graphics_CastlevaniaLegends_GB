@@ -330,6 +330,10 @@ namespace src
 
                     for (int i = 0; i < 8; i++)
                     {
+                        if (positionUnpacked >= 1876)
+                        {
+                            int gg = 6;
+                        }
                         if (FindMaxLengthSequence(bufferArray, positionBeginBuffer, positionEndBuffer, unpackedArray, positionUnpacked, out foundSequencePosition, out foundSequenceCount) == true)
                         {
                             packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x00 << i));
