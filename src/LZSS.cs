@@ -97,6 +97,7 @@ namespace src
                         if (GetBit(flagByte, i) == 1) // if a specified bit equals 1 then
                         {
                             firstCurrent = openFile.ReadByte(); // reading byte which will be copied in array with unpacked data
+                            secondCurrent = 0; 
                             packedCount++; // increasing the count of bytes in the sequence of packed data by 1
                             unpackedArray.Add(firstCurrent); // adding the byte to array with unpacked data
                             bufferArray[positionBuffer] = firstCurrent; // copying the byte to buffer
@@ -121,7 +122,7 @@ namespace src
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine("Error message: {0}", ex.Message);
             }
         
             return unpackedArray;
@@ -327,13 +328,8 @@ namespace src
                     flagByte = 0;
                     positionFlagByte = packedArray.Count;
                     packedArray.Add(flagByte);
-
                     for (int i = 0; i < 8; i++)
                     {
-                        if (positionUnpacked >= 1876)
-                        {
-                            int gg = 6;
-                        }
                         if (FindMaxLengthSequence(bufferArray, positionBeginBuffer, positionEndBuffer, unpackedArray, positionUnpacked, out foundSequencePosition, out foundSequenceCount) == true)
                         {
                             packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x00 << i));
@@ -357,9 +353,9 @@ namespace src
                         }
                         if (positionUnpacked >= unpackedArray.Count)
                         {
-                            for (int j = i; j < 8; j++)
+                            for (int j = i + 1; j < 8; j++)
                             {
-                                packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x01 << i));
+                                packedArray[positionFlagByte] = (byte)(packedArray[positionFlagByte] | (0x01 << j));
                             }
                             break;
                         }
