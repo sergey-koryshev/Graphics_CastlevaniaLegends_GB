@@ -10,9 +10,6 @@ jobs:
   build:
 
     runs-on: windows-latest
-    
-    env:
-      SOLUTION: ./Graphics_CastlevaniaLegends_GB.sln
 
     steps:
       - uses: actions/checkout@v2
@@ -24,3 +21,9 @@ jobs:
         run: dotnet restore
       - name: Build
         run: dotnet build --configuration Release --no-restore
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: '.NET Build'
+          path: src/bin/Release/*
+          
