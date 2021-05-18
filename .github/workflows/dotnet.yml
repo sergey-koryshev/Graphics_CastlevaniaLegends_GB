@@ -12,21 +12,15 @@ jobs:
     runs-on: windows-latest
     
     env:
-      SOLUTION: Graphics_CastlevaniaLegends_GB.sln
+      SOLUTION: ./Graphics_CastlevaniaLegends_GB.sln
 
     steps:
-    - uses: actions/checkout@v1
-      name: Checkout Code
-    - name: Setup MSBuild Path
-      uses: warrenbuckley/Setup-MSBuild@v1
-    - name: Setup NuGet
-      uses: NuGet/setup-nuget@v1.0.2
-    - name: Restore NuGet Packages
-      run: nuget restore %SOLUTION%
-    - name: Build and Publish Web App
-      run: msbuild %SOLUTION% /p:Configuration=Release /p:DeployOnBuild=true /p:PublishProfile=FolderProfile
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v1.0.0
-      with:
-        name: published_webapp
-        path: src\bin\Release\Publish
+      - uses: actions/checkout@v2
+      - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v1.7.2
+        with:
+          dotnet-version: 5.0.x
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
